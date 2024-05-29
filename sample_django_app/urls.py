@@ -20,10 +20,11 @@ from shopify_app.views import  callback, LoginView, uninstall
 from home.views import HomeView
 
 urlpatterns = [
+    path('login/', include('shopify_auth.urls')),
     path('admin/', admin.site.urls),
     path('', HomeView.as_view(), name='root_path'),
-    path('api/', include('api.urls')),
-    path('login/', LoginView.as_view(), name='login'),
+    path('api/', include('api.urls')),    
     path('auth/shopify/callback', callback, name='callback'),
     path('uninstall', uninstall, name='uninstall'),
+    path('shopify/', include('shopify_auth.urls')),
 ]

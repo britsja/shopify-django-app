@@ -7,60 +7,72 @@
   <link rel="stylesheet" href="https://unpkg.com/@shopify/polaris@6.1.0/dist/styles.css" />
   <script>
     var AppBridge = window['app-bridge'];
-    var AppBridgeUtils = window['app-bridge-utils'];
     var actions = AppBridge.actions;
     var createApp = AppBridge.default;
     var TitleBar = actions.TitleBar;
     var app = createApp({
       apiKey: '{{ api_key }}',
-      shopOrigin: '{{ shop_origin }}'
+      shopOrigin: '{{ shop_origin }}',
     });
+
     var myTitleBar = TitleBar.create(app, { title: 'Hello' });
-    var shopifyAuthenticatedFetch = AppBridgeUtils.authenticatedFetch(app);
     var redirect = actions.Redirect.create(app);
 
-    console.log("AppBridge: ", AppBridge)
-    console.log("AppBridgeUtils: ", AppBridgeUtils)
-    console.log("actions: ", actions)
-    console.log("createApp: ", createApp)
-    console.log("TitleBar: ", TitleBar)
-    console.log("app: ", app)
-    console.log("api key: {{ api_key }}")
-    console.log("shop_origin: {{ shop_origin }}")
-    console.log("shopifyAuthenticatedFetch: ", shopifyAuthenticatedFetch)
-    console.log("redirect: ", redirect)
+    function authenticatedFetch(app) {
+      return async function(url, options = {}) {
+        const token = await app.getState().sessionToken;
+        const headers = new Headers(options.headers || {});
+        headers.append('Authorization', `Bearer ${token}`);
+        return fetch(url, {
+          ...options,
+          headers,
+        });
+      };
+    }
 
+    var fetchFunction = authenticatedFetch(app);
 
     function topLevelRedirectToLogin() {
       redirect.dispatch(actions.Redirect.Action.REMOTE, `${app.localOrigin}/login?shop={{ shop_origin }}`);
     }
 
     function getProducts() {
-      console.log("GETPRODUCTS TRIGGERED")
-      shopifyAuthenticatedFetch('/api/products').then(async (res) => {
+      console.log("GETPRODUCTS TRIGGERED");
+      fetchFunction('/api/products/').then(async (res) => {
+        console.log("FETCH RESPONSE: ", res);
+        if (!res.ok) {
+          console.log("FETCH FAILED: ", res.statusText);
+          return;
+        }
         var products = (await res.json())['products'];
+        console.log("PRODUCTS: ", products);
         var productListElement = window.document.querySelector('#product-list');
-
         for (var i = 0, len = products.length; i < len; i++) {
           var newLi = document.createElement('li');
-          newLi.textContent = products[i]['title']
+          newLi.textContent = products[i]['title'];
           productListElement.appendChild(newLi);
         }
-      });
+      }).catch(error => console.log("FETCH ERROR: ", error));
     }
-    function getOrders() {
-      console.log("GETORDERS TRIGGERED")
-      shopifyAuthenticatedFetch('/api/orders').then(async (res) => {
-        var orders = (await res.json())['orders'];
-        var orderListElement = window.document.querySelector('#order-list');
 
+    function getOrders() {
+      console.log("GETORDERS TRIGGERED");
+      fetchFunction('/api/orders/').then(async (res) => {
+        console.log("FETCH RESPONSE: ", res);
+        if (!res.ok) {
+          console.log("FETCH FAILED: ", res.statusText);
+          return;
+        }
+        var orders = (await res.json())['orders'];
+        console.log("ORDERS: ", orders);
+        var orderListElement = window.document.querySelector('#order-list');
         for (var i = 0, len = orders.length; i < len; i++) {
           var newLi = document.createElement('li');
-          console.log(orders[i]['line_items'])
-          newLi.textContent = orders[i]['line_items'][0]['price']
+          console.log(orders[i]['line_items']);
+          newLi.textContent = orders[i]['line_items'][0]['price'];
           orderListElement.appendChild(newLi);
         }
-      });
+      }).catch(error => console.log("FETCH ERROR: ", error));
     }
   </script>
 </head>

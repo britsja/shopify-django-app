@@ -45,7 +45,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Application definition
 
-INSTALLED_APPS = [
+INSTALLED_APPS = [    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -55,16 +55,19 @@ INSTALLED_APPS = [
     'shopify_app.apps.ShopifyAppConfig',
     'home',
     'api',
+    'shopify_auth',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',    
 ]
 
 ROOT_URLCONF = 'sample_django_app.urls'
@@ -80,10 +83,15 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'shopify_auth.context_processors.shopify_auth',
             ],
         },
     },
 ]
+
+AUTHENTICATION_BACKENDS = (
+    'shopify_auth.backends.ShopUserBackend',
+)
 
 WSGI_APPLICATION = 'sample_django_app.wsgi.application'
 
@@ -158,3 +166,27 @@ LOGGING = {
         },
     },
 }
+
+SHOPIFY_APP_NAME = 'Django SFM'
+SHOPIFY_APP_API_KEY = os.getenv('SHOPIFY_API_KEY')
+SHOPIFY_APP_API_SECRET = os.getenv('SHOPIFY_API_SECRET')
+SHOPIFY_APP_API_SCOPE = ['read_products', 'read_orders']
+SHOPIFY_APP_API_VERSION = '2024-04'
+
+# Set secure proxy header to allow proper detection of secure URLs behind a proxy.
+# Use the Shopify Auth user model.
+AUTH_USER_MODEL = 'api.AuthAppShopUser'
+
+# Set the login redirect URL to the "home" page for your app (where to go after logging on).
+# LOGIN_REDIRECT_URL = '/'
+
+# Set secure proxy header to allow proper detection of secure URLs behind a proxy.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SHOPIFY_APP_DEV_MODE = True
+
+X_FRAME_OPTIONS = 'ALLOWALL'  # This allows all iframes, you might need to be more restrictive in production
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+LOGIN_REDIRECT_URL = '/'
